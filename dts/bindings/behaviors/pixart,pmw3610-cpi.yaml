@@ -1,0 +1,12 @@
+# Copyright (c) 2024 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+description: |
+  Behavior to change the PMW3610 MOVE-mode (normal pointing) CPI at runtime.
+  param1 is the target CPI (200..3200, multiple of 200).
+  The trackball is resolved automatically (DEVICE_DT_GET_ONE), so no device
+  phandle is needed; this lets the node live in a shared dtsi across a split.
+
+compatible: "pixart,pmw3610-cpi"
+
+include: one_param.yaml

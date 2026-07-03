@@ -327,6 +327,34 @@ static int set_cpi_if_needed(const struct device *dev, uint32_t cpi) {
     return 0;
 }
 
+/* Runtime API: change the CPI used in MOVE (normal pointing) mode.
+ * Only validates and stores the value; the actual SPI write happens on the next
+ * MOVE sample via set_cpi_if_needed(), so there is no contention with the
+ * sampling work thread and no SPI access from the caller's context. */
+int pmw3610_set_move_cpi(const struct device *dev, uint32_t cpi) {
+    if ((cpi > PMW3610_MAX_CPI) || (cpi < PMW3610_MIN_CPI) || (cpi % 200 != 0)) {
+        LOG_ERR("move CPI value %u out of range or not a multiple of 200", cpi);
+        return -EINVAL;
+    }
+    struct pixart_data *data = dev->data;
+    data->move_cpi = cpi;
+    LOG_INF("move CPI set to %u (applied on next MOVE sample)", cpi);
+    return 0;
+}
+
+/* Runtime API: change the CPI used in SCROLL mode. Same contention-free approach
+ * as pmw3610_set_move_cpi(): validate and store; applied on the next SCROLL sample. */
+int pmw3610_set_scroll_cpi(const struct device *dev, uint32_t cpi) {
+    if ((cpi > PMW3610_MAX_CPI) || (cpi < PMW3610_MIN_CPI) || (cpi % 200 != 0)) {
+        LOG_ERR("scroll CPI value %u out of range or not a multiple of 200", cpi);
+        return -EINVAL;
+    }
+    struct pixart_data *data = dev->data;
+    data->scroll_cpi = cpi;
+    LOG_INF("scroll CPI set to %u (applied on next SCROLL sample)", cpi);
+    return 0;
+}
+
 /* Set sampling rate in each mode (in ms) */
 static int set_sample_time(const struct device *dev, uint8_t reg_addr, uint32_t sample_time) {
     uint32_t maxtime = 2550;
@@ -471,6 +499,9 @@ static int pmw3610_async_init_configure(const struct device *dev) {
 
     // cpi
     if (!err) {
+        struct pixart_data *data = dev->data;
+        data->move_cpi = CONFIG_PMW3610_CPI;
+        data->scroll_cpi = CONFIG_PMW3610_CPI;
         err = set_cpi(dev, CONFIG_PMW3610_CPI);
     }
 
@@ -591,11 +622,11 @@ static int pmw3610_report_data(const struct device *dev) {
     bool input_mode_changed = data->curr_mode != input_mode;
     switch (input_mode) {
     case MOVE:
-        set_cpi_if_needed(dev, CONFIG_PMW3610_CPI);
+        set_cpi_if_needed(dev, data->move_cpi);
         dividor = CONFIG_PMW3610_CPI_DIVIDOR;
         break;
     case SCROLL:
-        set_cpi_if_needed(dev, CONFIG_PMW3610_CPI);
+        set_cpi_if_needed(dev, data->scroll_cpi);
         if (input_mode_changed) {
             data->scroll_delta_x = 0;
             data->scroll_delta_y = 0;

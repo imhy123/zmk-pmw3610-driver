@@ -7,6 +7,15 @@
 extern "C" {
 #endif
 
+/* Runtime API: set the CPI used in MOVE (normal pointing) mode.
+ * cpi must be in [200, 3200] and a multiple of 200. Returns 0 on success,
+ * -EINVAL if out of range. Takes effect on the next MOVE-mode sample. */
+int pmw3610_set_move_cpi(const struct device *dev, uint32_t cpi);
+
+/* Runtime API: set the CPI used in SCROLL mode. Same constraints/semantics as
+ * pmw3610_set_move_cpi(). Takes effect on the next SCROLL-mode sample. */
+int pmw3610_set_scroll_cpi(const struct device *dev, uint32_t cpi);
+
 /* Timings (in us) used in SPI communication. Since MCU should not do other tasks during wait,
  * k_busy_wait is used instead of k_sleep */
 // - sub-us time is rounded to us, due to the limitation of k_busy_wait, see :

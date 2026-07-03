@@ -23,6 +23,8 @@ struct pixart_data {
 
     enum pixart_input_mode curr_mode;
     uint32_t curr_cpi;
+    uint32_t move_cpi;   // runtime CPI for MOVE mode, switchable via pmw3610-cpi behavior
+    uint32_t scroll_cpi; // runtime CPI for SCROLL mode, switchable via pmw3610-scroll-cpi behavior
     int32_t scroll_delta_x;
     int32_t scroll_delta_y;
 
